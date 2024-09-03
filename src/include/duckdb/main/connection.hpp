@@ -20,6 +20,7 @@
 #include "duckdb/main/stream_query_result.hpp"
 #include "duckdb/main/table_description.hpp"
 #include "duckdb/parser/sql_statement.hpp"
+#include "imbridge/execution/plan_prediction_util.hpp"
 
 #include "imbridge/execution/plan_prediction_util.hpp"
 
@@ -181,11 +182,6 @@ public:
 		UDFWrapper::RegisterFunction(name, args, ret_type, function, *context);
 	}
 
-	/* template <typename TR, typename... ARGS>
-	void CreateVectorizedFunction(const string &name, scalar_function_t udf_func,
-	                              LogicalType varargs = LogicalType::INVALID) {
-		UDFWrapper::RegisterFunction<TR, ARGS...>(name, udf_func, *context, std::move(varargs));
-	} */
 
 	template <typename TR, typename... ARGS>
 	void CreateVectorizedFunction(const string &name, scalar_function_t udf_func,

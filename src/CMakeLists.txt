@@ -1,3 +1,8 @@
+find_package(Arrow REQUIRED)
+find_package(Boost REQUIRED)
+
+link_directories(${ARROW_PYTHON_LIB_DIR})
+
 add_definitions(-DDUCKDB)
 
 if(${DISABLE_THREADS})
@@ -44,13 +49,13 @@ endif()
 if(AMALGAMATION_BUILD)
 
   add_library(duckdb SHARED "${PROJECT_SOURCE_DIR}/src/amalgamation/duckdb.cpp")
-  target_link_libraries(duckdb ${DUCKDB_SYSTEM_LIBS})
+  target_link_libraries(duckdb ${DUCKDB_SYSTEM_LIBS} Arrow::arrow_shared ${Arrow_LIBRARIES} ${Boost_LIBRARIES})
   link_threads(duckdb)
   link_extension_libraries(duckdb)
 
   add_library(duckdb_static STATIC
               "${PROJECT_SOURCE_DIR}/src/amalgamation/duckdb.cpp")
-  target_link_libraries(duckdb_static ${DUCKDB_SYSTEM_LIBS})
+  target_link_libraries(duckdb_static ${DUCKDB_SYSTEM_LIBS} Arrow::arrow_shared ${Arrow_LIBRARIES} ${Boost_LIBRARIES})
   link_threads(duckdb_static)
   link_extension_libraries(duckdb_static)
 
@@ -95,22 +100,26 @@ else()
       duckdb_yyjson)
 
   add_library(duckdb SHARED ${ALL_OBJECT_FILES})
-  target_link_libraries(duckdb ${DUCKDB_LINK_LIBS})
+  target_link_libraries(duckdb ${DUCKDB_LINK_LIBS} Arrow::arrow_shared ${Arrow_LIBRARIES} ${Boost_LIBRARIES})
   link_threads(duckdb)
   link_extension_libraries(duckdb)
 
   add_library(duckdb_static STATIC ${ALL_OBJECT_FILES})
-  target_link_libraries(duckdb_static ${DUCKDB_LINK_LIBS})
+  target_link_libraries(duckdb_static ${DUCKDB_LINK_LIBS} Arrow::arrow_shared ${Arrow_LIBRARIES} ${Boost_LIBRARIES})
   link_threads(duckdb_static)
   link_extension_libraries(duckdb_static)
 
   target_include_directories(
     duckdb PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-                  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+                  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+                  ${Arrow_INCLUDE_DIRS}
+                  ${Boost_INCLUDE_DIRS})
 
   target_include_directories(
     duckdb_static PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-                         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+                         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+                         ${Arrow_INCLUDE_DIRS}
+                         ${Boost_INCLUDE_DIRS})
 
   install(
     DIRECTORY "${PROJECT_SOURCE_DIR}/src/include/duckdb"

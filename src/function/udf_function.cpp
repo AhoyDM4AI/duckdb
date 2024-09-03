@@ -1,15 +1,14 @@
 #include "duckdb/function/udf_function.hpp"
 
-#include "duckdb/parser/parsed_data/create_scalar_function_info.hpp"
-#include "duckdb/parser/parsed_data/create_aggregate_function_info.hpp"
-
 #include "duckdb/main/client_context.hpp"
+#include "duckdb/parser/parsed_data/create_aggregate_function_info.hpp"
+#include "duckdb/parser/parsed_data/create_scalar_function_info.hpp"
 
 namespace duckdb {
 
 void UDFWrapper::RegisterFunction(string name, vector<LogicalType> args, LogicalType ret_type,
                                   scalar_function_t udf_function, ClientContext &context, LogicalType varargs,
-								  FunctionKind kind, u_int32_t batch_size) {
+                                  FunctionKind kind, u_int32_t batch_size) {
 
 	ScalarFunction scalar_function(std::move(name), std::move(args), std::move(ret_type), std::move(udf_function));
 	scalar_function.varargs = std::move(varargs);

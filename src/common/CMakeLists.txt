@@ -1,3 +1,8 @@
+find_package(Arrow REQUIRED)
+find_package(Boost REQUIRED)
+
+include_directories(${Arrow_INCLUDE_DIRS})
+
 if(NOT CLANG_TIDY)
   add_subdirectory(adbc)
 endif()
@@ -14,6 +19,7 @@ add_subdirectory(sort)
 add_subdirectory(types)
 add_subdirectory(value_operations)
 add_subdirectory(vector_operations)
+add_subdirectory(ipc)
 
 if(${EXIT_TIME_DESTRUCTORS_WARNING})
   set(CMAKE_CXX_FLAGS_DEBUG

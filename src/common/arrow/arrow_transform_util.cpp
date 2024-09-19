@@ -2,6 +2,8 @@
 
 #include "duckdb/common/arrow/arrow_appender.hpp"
 #include "duckdb/common/arrow/arrow_converter.hpp"
+#include "duckdb/common/exception/conversion_exception.hpp"
+#include "duckdb/common/types/arrow_string_view_type.hpp"
 
 #include <arrow/array/concatenate.h>
 #include <arrow/c/abi.h>
@@ -55,6 +57,8 @@ std::shared_ptr<arrow::Table> ConvertDataChunkToArrowTable(DataChunk &input, con
 void WriteArrowTableToSharedMemory(std::shared_ptr<arrow::Table> &table, SharedMemoryManager &shm,
                                    const std::string &shm_id) {
 	std::shared_ptr<arrow::Buffer> buffer;
+	int col = table->num_columns(), row = table->num_rows();
+	auto bit = sizeof(double_t);
 	std::shared_ptr<arrow::io::BufferOutputStream> stream =
 	    arrow::io::BufferOutputStream::Create(table->num_columns() * table->num_rows() * sizeof(double_t)).ValueOrDie();
 	std::shared_ptr<arrow::ipc::RecordBatchWriter> writer =
@@ -97,16 +101,98 @@ std::shared_ptr<arrow::Table> ReadArrowTableFromSharedMemory(SharedMemoryManager
 	return table;
 }
 
-void  ConvertArrowTableResultToVector(std::shared_ptr<arrow::Table> &table, Vector &res) {
+void ConvertArrowTableResultToVector(std::shared_ptr<arrow::Table> &table, Vector &res) {
 	// As the duckdb_python_udf, UDF only support one column return.
 	// only support directyly conver
+	idx_t size = table->num_rows();
 	std::shared_ptr<arrow::ChunkedArray> column = table->column(0);
 	std::vector<std::shared_ptr<arrow::Array>> chunks = column->chunks();
 	std::shared_ptr<arrow::Array> array = arrow::Concatenate(chunks).ValueOrDie();
 	ArrowArray c_array;
-	arrow::Status status = arrow::ExportArray(*array, &c_array);
-	auto data_ptr = (data_ptr_t)c_array.buffers[1];
-	FlatVector::SetData(res, data_ptr);
+	ArrowSchema c_array_type;
+	arrow::ExportArray(*array, &c_array);
+	arrow::ExportType(*array->type(), &c_array_type);
+	std::string ctype(c_array_type.format);
+	switch (res.GetType().id()) {
+	case LogicalTypeId::BOOLEAN:
+	case LogicalTypeId::TINYINT:
+	case LogicalTypeId::SMALLINT:
+	case LogicalTypeId::INTEGER:
+	case LogicalTypeId::FLOAT:
+	case LogicalTypeId::DOUBLE:
+	case LogicalTypeId::UTINYINT:
+	case LogicalTypeId::USMALLINT:
+	case LogicalTypeId::UINTEGER:
+	case LogicalTypeId::UBIGINT:
+	case LogicalTypeId::BIGINT:
+	case LogicalTypeId::HUGEINT:
+	case LogicalTypeId::UHUGEINT:
+	case LogicalTypeId::TIMESTAMP:
+	case LogicalTypeId::TIMESTAMP_SEC:
+	case LogicalTypeId::TIMESTAMP_MS:
+	case LogicalTypeId::TIMESTAMP_NS: {
+		auto data_ptr = (data_ptr_t)c_array.buffers[1];
+		FlatVector::SetData(res, data_ptr);
+		break;
+	}
+	case LogicalTypeId::VARCHAR: {
+		if (ctype == "u" || ctype == "z") { // NORMAL FIXED
+			auto c_data = (char *)c_array.buffers[2];
+			auto offsets = (uint32_t *)c_array.buffers[1];
+			auto strings = FlatVector::GetData<string_t>(res);
+			for (idx_t row_idx = 0; row_idx < size; row_idx++) {
+				if (FlatVector::IsNull(res, row_idx)) {
+					continue;
+				}
+				auto cptr = c_data + offsets[row_idx];
+				auto str_len = offsets[row_idx + 1] - offsets[row_idx];
+				if (str_len > NumericLimits<uint32_t>::Maximum()) { // LCOV_EXCL_START
+					throw duckdb::ConversionException("DuckDB does not support Strings over 4GB");
+				} // LCOV_EXCL_STOP
+				strings[row_idx] = string_t(cptr, UnsafeNumericCast<uint32_t>(str_len));
+			}
+		} else if (ctype == "U" || ctype == "Z") { // SUPER
+			auto c_data = (char *)c_array.buffers[2];
+			auto offsets = (uint64_t *)c_array.buffers[1];
+			auto strings = FlatVector::GetData<string_t>(res);
+			for (idx_t row_idx = 0; row_idx < size; row_idx++) {
+				if (FlatVector::IsNull(res, row_idx)) {
+					continue;
+				}
+				auto cptr = c_data + offsets[row_idx];
+				auto str_len = offsets[row_idx + 1] - offsets[row_idx];
+				if (str_len > NumericLimits<uint32_t>::Maximum()) { // LCOV_EXCL_START
+					throw duckdb::ConversionException("DuckDB does not support Strings over 4GB");
+				} // LCOV_EXCL_STOP
+				strings[row_idx] = string_t(cptr, UnsafeNumericCast<uint32_t>(str_len));
+			}
+		} else if (ctype == "vu") { // VIEW
+			auto strings = FlatVector::GetData<string_t>(res);
+			auto arrow_string = (arrow_string_view_t *)c_array.buffers[1];
+			for (idx_t row_idx = 0; row_idx < size; row_idx++) {
+				if (FlatVector::IsNull(res, row_idx)) {
+					continue;
+				}
+				auto length = UnsafeNumericCast<uint32_t>(arrow_string[row_idx].Length());
+				if (arrow_string[row_idx].IsInline()) {
+					strings[row_idx] = string_t(arrow_string[row_idx].GetInlineData(), length);
+				} else {
+					auto buffer_index = UnsafeNumericCast<uint32_t>(arrow_string[row_idx].GetBufferIndex());
+					int32_t offset = arrow_string[row_idx].GetOffset();
+					D_ASSERT(c_array.n_buffers > 2 + buffer_index);
+					auto c_data = (char *)c_array.buffers[2 + buffer_index];
+					strings[row_idx] = string_t(&c_data[offset], length);
+				}
+			}
+		} else {
+			throw duckdb::ConversionException("Unsupported Arrow String format: %s", c_array_type.format);
+		}
+
+		break;
+	}
+	default:
+		throw NotImplementedException("Unsupported type for arrow conversion: %s", res.GetType().ToString());
+	}
 }
 
 } // namespace imbridge

@@ -23,6 +23,12 @@ int main(int argc, char **argv) {
 	}
 	PyGILState_STATE gstate;
 	gstate = PyGILState_Ensure();
+	
+	PyObject *dycacher = PyImport_ImportModule("dycacher");
+    if (!dycacher) {
+        PyErr_Print();
+    }
+	
 	if (arrow::py::import_pyarrow()) {
 		std::cout
 		    << "[Server] import pyarrow error! make sure your default python environment has installed the pyarrow\n";
@@ -32,7 +38,7 @@ int main(int argc, char **argv) {
 	imbridge::SharedMemoryManager shm_server(channel_name, imbridge::ProcessKind::SERVER);
 
 	// prepare the environment
-	std::ifstream file("/root/workspace/duckdb/examples/embedded-c++/code.py");
+	std::ifstream file("/root/workspace/duckdb/examples/embedded-c++/imbridge/code.py");
 	std::stringstream buffer;
 	buffer << file.rdbuf();
 	std::string python_code = buffer.str();
@@ -61,5 +67,7 @@ int main(int argc, char **argv) {
 	}
 	// std::cout << "[Server] udf server " << channel_name << " closed\n";
 	shm_server.sem_client->post();
+	PyGILState_Release(gstate);
+    Py_Finalize();
 	return 0;
 }

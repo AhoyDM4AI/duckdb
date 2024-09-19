@@ -22,4 +22,5 @@ class MyProcess:
         print(self.name)
         print(self.age)
         print(table.num_rows)
+        print(table.num_columns)
         return process_table(table)

@@ -1,0 +1,4 @@
+add_subdirectory(raven)
+add_subdirectory(tpcx_ai)
+add_subdirectory(communication_cost)
+add_subdirectory(cpu_usage)

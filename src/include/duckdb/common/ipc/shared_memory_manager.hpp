@@ -20,7 +20,7 @@ namespace imbridge {
 
 enum class ProcessKind : u_int8_t { CLIENT = 0, SERVER = 1, MANAGER = 2 };
 
-const std::string START_SERVER_COMMAND = "/root/workspace/duckdb/examples/embedded-c++/server_start.sh  ";
+const std::string START_SERVER_COMMAND = "/root/workspace/duckdb/examples/embedded-c++/imbridge/server_start.sh  ";
 
 static std::string thread_id_to_string(std::thread::id id) {
 	std::ostringstream ss;
@@ -30,7 +30,7 @@ static std::string thread_id_to_string(std::thread::id id) {
 
 class SharedMemoryManager {
 public:
-	SharedMemoryManager(const std::string &name, ProcessKind process_kind, const size_t size = 1024 * 1024 * 16);
+	SharedMemoryManager(const std::string &name, ProcessKind process_kind, const size_t size = 1024 * 1024 * 32);
 	~SharedMemoryManager() {
 		if (kind == ProcessKind::MANAGER) {
 			close_server();

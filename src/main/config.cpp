@@ -375,8 +375,7 @@ idx_t CGroupBandwidthQuota(idx_t physical_cores, FileSystem &fs) {
 
 idx_t DBConfig::GetSystemMaxThreads(FileSystem &fs) {
 #ifndef DUCKDB_NO_THREADS
-	// idx_t physical_cores = std::thread::hardware_concurrency();
-	idx_t physical_cores = 4;
+	idx_t physical_cores = std::thread::hardware_concurrency();
 #ifdef __linux__
 	auto cores_available_per_period = CGroupBandwidthQuota(physical_cores, fs);
 	return MaxValue<idx_t>(cores_available_per_period, 1);

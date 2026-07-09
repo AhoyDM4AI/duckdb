@@ -1,6 +1,6 @@
 #include "prediction/execution/exec_prediction_util.hpp"
 
-#include "dbend/c/imlane_dbend.hpp"
+#include "imlane/cpp/dbend_arrow_lane.hpp"
 
 #include "concurrentqueue.h"
 #include "lightweightsemaphore.h"
@@ -18,7 +18,7 @@ namespace duckdb{
                 kind == FunctionKind::SCHEDULE_PREDICTION ||
                 kind == FunctionKind::THREAD_SCHEDULE_PREDICTION ||
                 kind == FunctionKind::THREAD_SCHEDULE_PREDICTION_WITH_BATCHING) {
-                    lane_context = new IMLane::DBEnd::DBEndContext();
+                    lane_context = new IMLane::DBEnd::RuntimeContext();
                     auto setup_status = lane_context->Setup();
                     if(!(setup_status.kind == IMLane::DBEnd::StatusKind::OK)) {
                         InternalException("IMLane: Fail to setup dbend context.");

@@ -10,7 +10,7 @@
 #include <string>
 #include <iostream>
 
-#include "dbend/c/imlane_dbend.hpp"
+#include "imlane/cpp/dbend_arrow_lane.hpp"
 
 namespace duckdb {
 namespace prediction {
@@ -45,7 +45,7 @@ struct FilterLaneSlot {
     unique_ptr<DataChunk> input;
     unique_ptr<DataChunk> output;
     SelectionVector sel;
-    std::unique_ptr<IMLane::DBEnd::ExecAsyncFuncContext> task;
+    std::unique_ptr<IMLane::DBEnd::RuntimeAsyncExecContext> task;
 
     FilterLaneSlot(ClientContext &context, Expression *expression,
      const vector<LogicalType> &input_types, const vector<LogicalType> &output_types, PredictionGlobalState* pgstate):

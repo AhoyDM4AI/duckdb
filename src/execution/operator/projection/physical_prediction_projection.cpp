@@ -7,7 +7,7 @@
 #include <string>
 #include <iostream>
 
-#include "dbend/c/imlane_dbend.hpp"
+#include "imlane/cpp/dbend_arrow_lane.hpp"
 
 namespace duckdb {
 
@@ -66,7 +66,7 @@ struct ProjectionLaneSlot {
     unique_ptr<ExpressionExecutor> executor;
     unique_ptr<DataChunk> input;
     unique_ptr<DataChunk> output;
-    std::unique_ptr<IMLane::DBEnd::ExecAsyncFuncContext> task;
+    std::unique_ptr<IMLane::DBEnd::RuntimeAsyncExecContext> task;
 
     ProjectionLaneSlot(ClientContext &context, const vector<unique_ptr<Expression>> &expressions,
      const vector<LogicalType> &input_types, const vector<LogicalType> &output_types, PredictionGlobalState* pgstate) {

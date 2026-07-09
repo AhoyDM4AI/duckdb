@@ -13,7 +13,7 @@
 
 namespace IMLane {
     namespace DBEnd {
-        class DBEndContext;
+        class RuntimeContext;
         struct IMSettings;
     }
 }
@@ -54,7 +54,7 @@ namespace duckdb {
                     kind == FunctionKind::THREAD_SCHEDULE_PREDICTION_WITH_BATCHING;
                 }
     
-                IMLane::DBEnd::DBEndContext* lane_context;
+                IMLane::DBEnd::RuntimeContext* lane_context;
                 FunctionKind kind;
 
         };

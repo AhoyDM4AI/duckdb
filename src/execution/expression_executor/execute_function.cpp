@@ -1,6 +1,6 @@
 #include "duckdb/execution/expression_executor.hpp"
 #include "duckdb/planner/expression/bound_function_expression.hpp"
-#include "dbend/c/imlane_dbend.hpp"
+#include "imlane/cpp/dbend_arrow_lane.hpp"
 #include "prediction/datachunk_converter.hpp"
 
 namespace duckdb {
@@ -145,7 +145,7 @@ void ExpressionExecutor::Execute(const BoundFunctionExpression &expr, Expression
 				auto &state_f = state->Cast<ExecuteFunctionState>();
 				if(state_f.exec_ctx == nullptr) {
 					auto pull_p = lane_context->ExecuteFunctionPush(expr.function.name, arguments, result);
-					state_f.exec_ctx = shared_ptr<IMLane::DBEnd::ExecFuncContext<DataChunk, Vector>>(std::move(pull_p));
+					state_f.exec_ctx = shared_ptr<IMLane::DBEnd::RuntimeExecContext<DataChunk, Vector>>(std::move(pull_p));
 				} else {
 					// auto is_ready = state_f.exec_ctx->ExecuteFuncTryPull();
 					state_f.exec_ctx->ExecuteFuncPull();

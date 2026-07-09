@@ -47,7 +47,25 @@ else()
   endif()
 endif()
 
-set(CMAKE_PREFIX_PATH "/home/IMLane_main/dist/lib" ${CMAKE_PREFIX_PATH})
+get_filename_component(IMLANE_REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
+set(IMLANE_PACKAGE_DIR "" CACHE PATH "IMLane package config directory")
+set(IMLANE_RUNTIME_SOURCE_DIR "${IMLANE_REPO_ROOT}" CACHE PATH "IMLane runtime adapter source tree")
+
+set(IMLANE_PACKAGE_CANDIDATES
+    "${IMLANE_PACKAGE_DIR}"
+    "${IMLANE_REPO_ROOT}/build_cpp_sdk/lib/cmake/IMLane"
+    "${IMLANE_REPO_ROOT}/dist/lib/cmake/IMLane"
+    "${IMLANE_REPO_ROOT}/dist/lib/cmake")
+
+foreach(IMLANE_PACKAGE_CANDIDATE ${IMLANE_PACKAGE_CANDIDATES})
+  if(IMLANE_PACKAGE_CANDIDATE
+     AND EXISTS "${IMLANE_PACKAGE_CANDIDATE}/IMLaneConfig.cmake"
+     AND EXISTS "${IMLANE_PACKAGE_CANDIDATE}/IMLaneTargets.cmake")
+    set(IMLane_DIR "${IMLANE_PACKAGE_CANDIDATE}" CACHE PATH "IMLane package config directory" FORCE)
+    set(CMAKE_PREFIX_PATH "${IMLANE_PACKAGE_CANDIDATE};${CMAKE_PREFIX_PATH}")
+    break()
+  endif()
+endforeach()
 
 find_package(IMLane REQUIRED)
 

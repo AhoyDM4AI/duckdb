@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "dbend/c/table_converter.hpp"
+#include "imlane/cpp/arrow_lane_table_converter.hpp"
 
 #include "duckdb/main/client_properties.hpp"
 #include "duckdb/common/types/data_chunk.hpp"
